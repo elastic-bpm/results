@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/elastic-bpm/results/issues"
   },
-  "homepage": "https://github.com/elastic-bpm/results#readme"
+  "homepage": "https://github.com/elastic-bpm/results#readme",
+  "dependencies": {
+    "elasticsearch": "^12.1.3"
+  }
 }

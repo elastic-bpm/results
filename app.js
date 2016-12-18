@@ -1,11 +1,14 @@
 var elasticsearch = require('elasticsearch');
 var fs = require('fs');
+var moment = require('moment');
 var client = new elasticsearch.Client({
   host: '137.116.195.67:9200',
-  log: 'trace'
+//  log: 'trace'
 });
 
 
+var startEpoch = new Date("2016-12-18 12:05").valueOf();
+var endEpoch = new Date("2016-12-18 13:15").valueOf();
 
 metricsBody = {
     "size": 5000,
@@ -29,8 +32,8 @@ metricsBody = {
                 {
                     "range": {
                         "@timestamp": {
-                            "gte": 1481747400000,
-                            "lte": 1481751000000,
+                            "gte": startEpoch,
+                            "lte": endEpoch,
                             "format": "epoch_millis"
                         }
                     }
@@ -117,8 +120,8 @@ logstashBody = {
                 {
                     "range": {
                         "@timestamp": {
-                            "gte": 1481747400000,
-                            "lte": 1481751000000,
+                            "gte": startEpoch,
+                            "lte": endEpoch,
                             "format": "epoch_millis"
                         }
                     }
@@ -161,30 +164,68 @@ logstashBody = {
 // });
 
 
+var outputFile = function(array, filename, callback) {
+    var dateString = moment(startEpoch).format('YYYYMMDD');
+    var dir = "./output/" + dateString;
+    if (!fs.existsSync(dir)){
+        fs.mkdirSync(dir);
+    }
 
-var allTitles = [];
+    fs.writeFile(dir + "/" + dateString + "-" + filename + ".json", JSON.stringify(array, null, 2), callback);
+};
 
-// GET Metrics INFO
-client.search({
-  index: 'metricbeat-*',
-  scroll: '30s', // keep the search results "scrollable" for 30 seconds
-  body: metricsBody
-}, function getMoreUntilDone(error, response) {
+var writeMetrics = function(callback) {
+    var metricTitles = [];
 
-  // collect the title from each response
-  response.hits.hits.forEach(function (hit) {
-    allTitles.push(hit);
-  });
+    // GET Metrics INFO
+    client.search({
+        index: 'metricbeat-*',
+        scroll: '30s', // keep the search results "scrollable" for 30 seconds
+        body: metricsBody
+    }, function getMoreUntilDone(error, response) {
+        metricTitles.push.apply(metricTitles, response.hits.hits);
 
-  if (response.hits.total > allTitles.length) {
-    // ask elasticsearch for the next set of hits from this search
-    client.scroll({
-      scrollId: response._scroll_id,
-      scroll: '30s'
-    }, getMoreUntilDone);
-  } else {
-    // console.log('every "test" title', allTitles);
-    console.log("Amount of results: " + allTitles.length);
-    fs.writeFile("out.json", allTitles);
-  }
+        if (response.hits.total > metricTitles.length) {
+            console.log("Got " + metricTitles.length + " of " + response.hits.total);
+            client.scroll({
+                scrollId: response._scroll_id,
+                scroll: '30s'
+            }, getMoreUntilDone);
+        } else {
+            console.log("Amount of results for metrics: " + metricTitles.length);
+            outputFile(metricTitles, "metrics", callback);
+        }
+    });
+
+};
+
+var writeLogs = function(callback) {
+    var logTitles = [];
+
+    // GET logstash INFO
+    client.search({
+        index: 'logstash-*',
+        scroll: '30s', // keep the search results "scrollable" for 30 seconds
+        body: logstashBody
+    }, function getMoreUntilDone(error, response) {
+        logTitles.push.apply(logTitles, response.hits.hits);
+
+        if (response.hits.total > logTitles.length) {
+            console.log("Got " + logTitles.length + " of " + response.hits.total);
+            client.scroll({
+                scrollId: response._scroll_id,
+                scroll: '30s'
+            }, getMoreUntilDone);
+        } else {
+            console.log("Amount of results for logs: " + logTitles.length);
+            outputFile(logTitles, "logstash", callback);
+        }
+    });
+
+};
+
+writeMetrics(function() {
+    writeLogs(function() {
+        console.log("Done!");
+    });
 });

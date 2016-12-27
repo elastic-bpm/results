@@ -5,7 +5,7 @@ library( ReporteRs )
 
 #setwd("C:/Users/Johannes/Projects/results/output/20161218")
 #setwd("C:/Users/Johannes/Projects/results/output/20161218.03")
-setwd("C:/Users/Johannes/Projects/results/output/20161226")
+setwd("C:/Users/Johannes/Projects/results/output/20161226.03")
 logDF <- fromJSON("20161226-logstash.json", flatten = TRUE)
 
 workerStart <- logDF[grep("worker:start", logDF$"_source.message", ignore.case=T),]
@@ -29,19 +29,21 @@ hist(workerDone$time, breaks="mins", freq=TRUE, format="%H:%M:%S")
 #save(logDF, file = "logDF.RData")
 
 metricsDF <- fromJSON("20161226-metrics.json", flatten = TRUE)
+metricsDF <- metricsDF[grep("^node", metricsDF$`_source.beat.hostname`),]
 metricsDF$timeEpoch <- as.numeric( metricsDF$`fields.@timestamp`)
 metricsDF$time <- as.POSIXct(metricsDF$timeEpoch/1000, origin="1970-01-01", tz="Europe/Amsterdam")
 summary(metricsDF)
 
 loadDF <- metricsDF[grep("load", metricsDF$"_source.metricset.name"),]
 #hist(loadDF$time, breaks="mins", freq=TRUE, format="%H:%M:%S")
-p <- ggplot(loadDF, aes(loadDF$time, loadDF$`_source.system.load.5`))
+p <- ggplot(loadDF, aes(loadDF$time, loadDF$`_source.system.load.norm.1`))
 p + geom_point(aes(colour = factor(loadDF$`_source.beat.hostname`)))
+summary(loadDF)
 
 writeDF <- metricsDF[complete.cases(metricsDF$`_source.system.diskio.write.bytes`),]
-writeDF <- writeDF[grep("node-06", writeDF$`_source.beat.hostname`),]
-p <- ggplot(writeDF, aes(writeDF$time, writeDF$`_source.system.diskio.write.count`))
-p + geom_point(aes(colour = factor(writeDF$`_source.system.diskio.name`)))
+writeDF <- writeDF[grep("sda1", writeDF$`_source.system.diskio.name`),]
+p <- ggplot(writeDF, aes(writeDF$time, writeDF$`_source.system.diskio.write.bytes`))
+p + geom_line(aes(colour = factor(writeDF$`_source.beat.hostname`)))
 summary(writeDF)
 writeDF
 

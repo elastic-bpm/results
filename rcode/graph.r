@@ -15,7 +15,7 @@ saveMyPlot <- function(p, name) {
   Sys.sleep(0)
 }
 
-setwd("C:/Users/Johannes/Projects/results/output/201701041515")
+setwd("C:/Users/Johannes/Projects/results/output/201701042235")
 
 logDF <- fromJSON("logstash.json", flatten = TRUE)
 logDF$timeEpoch <- as.numeric( logDF$`fields.@timestamp`)
@@ -29,9 +29,12 @@ workflowInfo$`_source.message`
 
 workflowStats <- logDF[grep("workflow:stats", logDF$"_source.message", ignore.case=T),]
 workflowStats$wfID <- substring(workflowStats$`_source.message`, 16, 51)
-workflowStats$wfType <- substring(workflowStats$`_source.message`, 53, 54)
+workflowStats$wfType <- substring(workflowStats$`_source.message`, 53, 53)
 workflowStats$json <- substring(workflowStats$`_source.message`, 55)
 
+workflowStats$json
+
+type <- numeric(nrow(workflowStats))
 makespan <- numeric(nrow(workflowStats))
 wait_time <- numeric(nrow(workflowStats))
 response_time <- numeric(nrow(workflowStats))
@@ -39,6 +42,7 @@ human_time <- numeric(nrow(workflowStats))
 system_time <- numeric(nrow(workflowStats))
 for (i in 1:nrow(workflowStats)){
   jsonStats = fromJSON(workflowStats[i,]$json)
+  type[i] <- strtoi(workflowStats[i,]$wfType)
   makespan[i] <- jsonStats$makespan
   wait_time[i] <- jsonStats$wait_time
   response_time[i] <- jsonStats$response_time
@@ -46,8 +50,11 @@ for (i in 1:nrow(workflowStats)){
   system_time[i] <- jsonStats$system_time
 }
 
-wfDF <- data.frame(makespan, wait_time, response_time, human_time, system_time)
+wfDF <- data.frame(type, makespan, wait_time, response_time, human_time, system_time)
 #basicStats(wfDF)
+boxplot(response_time ~ type, wfDF)
+boxplot(human_time ~ type, wfDF)
+boxplot(system_time ~ type, wfDF)
 boxplot(wfDF)
 
 workerStart$start <- 1

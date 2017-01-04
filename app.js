@@ -7,8 +7,8 @@ var client = new elasticsearch.Client({
 });
 
 
-var startEpoch = new Date("2017-01-04 19:55").valueOf();
-var endEpoch = new Date("2017-01-04 21:05").valueOf();
+var startEpoch = new Date("2017-01-04 22:35").valueOf();
+var endEpoch = new Date("2017-01-04 23:20").valueOf();
 
 metricsBody = {
     "size": 5000,

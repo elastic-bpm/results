@@ -1,6 +1,7 @@
 library(jsonlite)
 library(ggplot2)
 library( ReporteRs )
+library(fBasics)
 
 saveMyPlot <- function(p, name) {
   print(p)
@@ -14,21 +15,47 @@ saveMyPlot <- function(p, name) {
   Sys.sleep(0)
 }
 
-setwd("C:/Users/Johannes/Projects/results/output/20161227")
+setwd("C:/Users/Johannes/Projects/results/output/201701041515")
 
-logDF <- fromJSON("20161227-logstash.json", flatten = TRUE)
+logDF <- fromJSON("logstash.json", flatten = TRUE)
 logDF$timeEpoch <- as.numeric( logDF$`fields.@timestamp`)
 logDF$time <- as.POSIXct(logDF$timeEpoch/1000, origin="1970-01-01", tz="Europe/Amsterdam")
 
 workerStart <- logDF[grep("worker:start", logDF$"_source.message", ignore.case=T),]
 workerDone <- logDF[grep("worker:done", logDF$"_source.message", ignore.case=T),]
 
+workflowInfo <- logDF[grep("workflow:info", logDF$"_source.message", ignore.case=T),]
+workflowInfo$`_source.message`
+
+workflowStats <- logDF[grep("workflow:stats", logDF$"_source.message", ignore.case=T),]
+workflowStats$wfID <- substring(workflowStats$`_source.message`, 16, 51)
+workflowStats$wfType <- substring(workflowStats$`_source.message`, 53, 54)
+workflowStats$json <- substring(workflowStats$`_source.message`, 55)
+
+makespan <- numeric(nrow(workflowStats))
+wait_time <- numeric(nrow(workflowStats))
+response_time <- numeric(nrow(workflowStats))
+human_time <- numeric(nrow(workflowStats))
+system_time <- numeric(nrow(workflowStats))
+for (i in 1:nrow(workflowStats)){
+  jsonStats = fromJSON(workflowStats[i,]$json)
+  makespan[i] <- jsonStats$makespan
+  wait_time[i] <- jsonStats$wait_time
+  response_time[i] <- jsonStats$response_time
+  human_time[i] <- jsonStats$human_time
+  system_time[i] <- jsonStats$system_time
+}
+
+wfDF <- data.frame(makespan, wait_time, response_time, human_time, system_time)
+#basicStats(wfDF)
+boxplot(wfDF)
+
 workerStart$start <- 1
 workerDone$start <- -1
 
 firstStart <- min(workerStart$timeEpoch)
 
-metricsDF <- fromJSON("20161227-metrics.json", flatten = TRUE)
+metricsDF <- fromJSON("metrics.json", flatten = TRUE)
 metricsDF <- metricsDF[grep("^node", metricsDF$`_source.beat.hostname`),]
 metricsDF$timeEpoch <- as.numeric( metricsDF$`fields.@timestamp`)
 metricsDF$timeFromStart <- (metricsDF$timeEpoch - firstStart)/1000
@@ -96,3 +123,5 @@ plotNet <- function(df) {
   return (p)
 }
 saveMyPlot(plotNet(netDF), "net")
+
+

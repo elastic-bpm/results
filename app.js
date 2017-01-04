@@ -7,8 +7,8 @@ var client = new elasticsearch.Client({
 });
 
 
-var startEpoch = new Date("2016-12-27 12:45").valueOf();
-var endEpoch = new Date("2016-12-27 13:30").valueOf();
+var startEpoch = new Date("2017-01-04 19:55").valueOf();
+var endEpoch = new Date("2017-01-04 21:05").valueOf();
 
 metricsBody = {
     "size": 5000,
@@ -165,13 +165,13 @@ logstashBody = {
 
 
 var outputFile = function(array, filename, callback) {
-    var dateString = moment(startEpoch).format('YYYYMMDD');
+    var dateString = moment(startEpoch).format('YYYYMMDDHHmm');
     var dir = "./output/" + dateString;
     if (!fs.existsSync(dir)){
         fs.mkdirSync(dir);
     }
 
-    fs.writeFile(dir + "/" + dateString + "-" + filename + ".json", JSON.stringify(array, null, 2), callback);
+    fs.writeFile(dir + "/" + filename + ".json", JSON.stringify(array, null, 2), callback);
 };
 
 var writeMetrics = function(callback) {

@@ -18,6 +18,6 @@
   "homepage": "https://github.com/elastic-bpm/results#readme",
   "dependencies": {
     "elasticsearch": "^12.1.3",
-    "moment": "^2.17.1"
+    "moment": "^2.18.0"
   }
 }

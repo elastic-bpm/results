@@ -2,15 +2,15 @@ var elasticsearch = require('elasticsearch');
 var fs = require('fs');
 var moment = require('moment');
 var client = new elasticsearch.Client({
-  host: '137.116.195.67:9200',
-//  log: 'trace'
+    host: 'elk-host.westeurope.cloudapp.azure.com:9200',
+    //  log: 'trace'
 });
 
-
-var startEpoch = new Date("2017-01-04 22:35").valueOf();
-var endEpoch = new Date("2017-01-04 23:20").valueOf();
+var startEpoch = new Date("2017-05-26 22:37").valueOf();
+var endEpoch = new Date("2017-05-26 23:20").valueOf();
 
 metricsBody = {
+    "version": true,
     "size": 5000,
     "sort": [
         {
@@ -42,18 +42,8 @@ metricsBody = {
             "must_not": []
         }
     },
-    "highlight": {
-        "pre_tags": [
-            "@kibana-highlighted-field@"
-        ],
-        "post_tags": [
-            "@/kibana-highlighted-field@"
-        ],
-        "fields": {
-            "*": {}
-        },
-        "require_field_match": false,
-        "fragment_size": 2147483647
+    "_source": {
+        "excludes": []
     },
     "aggs": {
         "2": {
@@ -68,20 +58,10 @@ metricsBody = {
     "stored_fields": [
         "*"
     ],
-    "_source": true,
     "script_fields": {},
-    "fielddata_fields": [
+    "docvalue_fields": [
         "@timestamp",
-        "docker.container.created",
-        "mongodb.status.local_time",
-        "mongodb.status.background_flushing.last_finished",
-        "postgresql.activity.backend_start",
-        "postgresql.activity.transaction_start",
-        "postgresql.activity.query_start",
-        "postgresql.activity.state_change",
-        "postgresql.bgwriter.stats_reset",
-        "postgresql.database.stats_reset",
-        "system.process.cpu.start_time"
+        "container.created"
     ]
 };
 
@@ -151,55 +131,47 @@ logstashBody = {
     ]
 };
 
-
-// // GET LOGSTASH INFO
-// client.search({
-//   index: 'logstash-*',
-//   body: logstashBody
-// }).then(function (resp) {
-//     var hits = resp.hits.hits;
-//     console.log(hits);
-// }, function (err) {
-//     console.trace(err.message);
-// });
-
-
-var outputFile = function(array, filename, callback) {
+var outputFile = function (array, filename, callback) {
     var dateString = moment(startEpoch).format('YYYYMMDDHHmm');
     var dir = "./output/" + dateString;
-    if (!fs.existsSync(dir)){
+    if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }
 
     fs.writeFile(dir + "/" + filename + ".json", JSON.stringify(array, null, 2), callback);
 };
 
-var writeMetrics = function(callback) {
+var writeMetrics = function (callback) {
     var metricTitles = [];
 
     // GET Metrics INFO
     client.search({
-        index: 'metricbeat-*',
+        index: 'dockerbeat-*',
         scroll: '30s', // keep the search results "scrollable" for 30 seconds
         body: metricsBody
     }, function getMoreUntilDone(error, response) {
-        metricTitles.push.apply(metricTitles, response.hits.hits);
-
-        if (response.hits.total > metricTitles.length) {
-            console.log("Got " + metricTitles.length + " of " + response.hits.total);
-            client.scroll({
-                scrollId: response._scroll_id,
-                scroll: '30s'
-            }, getMoreUntilDone);
+        if (error) {
+            console.error(error);
         } else {
-            console.log("Amount of results for metrics: " + metricTitles.length);
-            outputFile(metricTitles, "metrics", callback);
+
+            metricTitles.push.apply(metricTitles, response.hits.hits);
+
+            if (response.hits.total > metricTitles.length) {
+                console.log("Got " + metricTitles.length + " of " + response.hits.total);
+                client.scroll({
+                    scrollId: response._scroll_id,
+                    scroll: '30s'
+                }, getMoreUntilDone);
+            } else {
+                console.log("Amount of results for metrics: " + metricTitles.length);
+                outputFile(metricTitles, "metrics", callback);
+            }
         }
     });
 
 };
 
-var writeLogs = function(callback) {
+var writeLogs = function (callback) {
     var logTitles = [];
 
     // GET logstash INFO
@@ -208,24 +180,28 @@ var writeLogs = function(callback) {
         scroll: '30s', // keep the search results "scrollable" for 30 seconds
         body: logstashBody
     }, function getMoreUntilDone(error, response) {
-        logTitles.push.apply(logTitles, response.hits.hits);
-
-        if (response.hits.total > logTitles.length) {
-            console.log("Got " + logTitles.length + " of " + response.hits.total);
-            client.scroll({
-                scrollId: response._scroll_id,
-                scroll: '30s'
-            }, getMoreUntilDone);
+        if (error) {
+            console.error(error);
         } else {
-            console.log("Amount of results for logs: " + logTitles.length);
-            outputFile(logTitles, "logstash", callback);
+            logTitles.push.apply(logTitles, response.hits.hits);
+
+            if (response.hits.total > logTitles.length) {
+                console.log("Got " + logTitles.length + " of " + response.hits.total);
+                client.scroll({
+                    scrollId: response._scroll_id,
+                    scroll: '30s'
+                }, getMoreUntilDone);
+            } else {
+                console.log("Amount of results for logs: " + logTitles.length);
+                outputFile(logTitles, "logstash", callback);
+            }
         }
     });
 
 };
 
-writeMetrics(function() {
-    writeLogs(function() {
+writeMetrics(function () {
+    writeLogs(function () {
         console.log("Done!");
     });
 });

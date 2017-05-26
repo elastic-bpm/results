@@ -3,6 +3,8 @@ library(ggplot2)
 library( ReporteRs )
 library(fBasics)
 
+setwd("C:/Users/Johannes/Projects/elastic/results/output/201705262237")
+
 saveMyPlot <- function(p, name) {
   print(p)
   dev.copy(png, paste(name,".png", sep=""))
@@ -15,17 +17,12 @@ saveMyPlot <- function(p, name) {
   Sys.sleep(0)
 }
 
-setwd("C:/Users/Johannes/Projects/results/output/201701042235")
-
 logDF <- fromJSON("logstash.json", flatten = TRUE)
 logDF$timeEpoch <- as.numeric( logDF$`fields.@timestamp`)
 logDF$time <- as.POSIXct(logDF$timeEpoch/1000, origin="1970-01-01", tz="Europe/Amsterdam")
 
 workerStart <- logDF[grep("worker:start", logDF$"_source.message", ignore.case=T),]
 workerDone <- logDF[grep("worker:done", logDF$"_source.message", ignore.case=T),]
-
-workflowInfo <- logDF[grep("workflow:info", logDF$"_source.message", ignore.case=T),]
-workflowInfo$`_source.message`
 
 workflowStats <- logDF[grep("workflow:stats", logDF$"_source.message", ignore.case=T),]
 workflowStats$wfID <- substring(workflowStats$`_source.message`, 16, 51)
@@ -51,7 +48,7 @@ for (i in 1:nrow(workflowStats)){
 }
 
 wfDF <- data.frame(type, makespan, wait_time, response_time, human_time, system_time)
-#basicStats(wfDF)
+basicStats(wfDF)
 boxplot(response_time ~ type, wfDF)
 boxplot(human_time ~ type, wfDF)
 boxplot(system_time ~ type, wfDF)

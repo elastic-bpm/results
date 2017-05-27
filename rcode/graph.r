@@ -15,7 +15,8 @@ setwd(args[1])
 
 saveMyPlot <- function(p, name) {
   print(p)
-  dev.copy(png, paste(name,".png", sep=""))
+  #dev.copy(png, paste(name,".png", sep=""))
+  png(paste(name,".png", sep=""))
   dev.off()
   Sys.sleep(0)
   

@@ -8,6 +8,7 @@ var client = new elasticsearch.Client({
 
 // var startEpoch = new Date("2017-05-26 22:37").valueOf();
 // var endEpoch = new Date("2017-05-26 23:20").valueOf();
+console.log("Getting logs from " + process.argv[2] + " to " + process.argv[3]);
 var startEpoch = new Date(process.argv[2]).valueOf();
 var endEpoch = new Date(process.argv[3]).valueOf();
 

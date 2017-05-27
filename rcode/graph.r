@@ -7,15 +7,14 @@ setwd("C:/Users/Johannes/Projects/elastic/results/output/201705271332")
 
 saveMyPlot <- function(p, name) {
   print(p)
-  #dev.copy(png, paste(name,".png", sep=""))
-  png(paste(name,".png", sep=""))
+  dev.copy(png, paste(name,".png", sep=""))
   dev.off()
   Sys.sleep(0)
   
-#  print(p)
-#  dev.copy(win.metafile, paste(name,".metafile", sep=""))
-#  dev.off()
-#  Sys.sleep(0)
+  print(p)
+  dev.copy(win.metafile, paste(name,".metafile", sep=""))
+  dev.off()
+  Sys.sleep(0)
 }
 
 logDF <- fromJSON("logstash.json", flatten = TRUE)

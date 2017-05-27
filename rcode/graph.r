@@ -3,6 +3,7 @@ library(ggplot2)
 library( ReporteRs )
 library(fBasics)
 
+args <- commandArgs(TRUE)
 if (length(args)==0) {
   stop("At least one argument must be supplied: working dir.n", call.=FALSE)
 }

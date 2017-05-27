@@ -1,10 +1,20 @@
 var elasticsearch = require('elasticsearch');
 var fs = require('fs');
 var moment = require('moment');
-var client = new elasticsearch.Client({
-    host: 'elk-host.westeurope.cloudapp.azure.com:9200',
-    //  log: 'trace'
-});
+
+
+
+var client;
+
+if (process.argv[4] === "swarm1-master") {
+    client = new elasticsearch.Client({host: 'elk-host.westeurope.cloudapp.azure.com:9200'});
+} else if (process.argv[4] === "swarm2-master") {
+    client = new elasticsearch.Client({host: 'elk-host.westeurope.cloudapp.azure.com:9201'});
+} else if (process.argv[4] === "swarm3-master") {
+    client = new elasticsearch.Client({host: 'elk-host.westeurope.cloudapp.azure.com:9202'});
+} else if (process.argv[4] === "swarm4-master") {
+    client = new elasticsearch.Client({host: 'elk-host.westeurope.cloudapp.azure.com:9203'});
+}
 
 // var startEpoch = new Date("2017-05-26 22:37").valueOf();
 // var endEpoch = new Date("2017-05-26 23:20").valueOf();

@@ -19,10 +19,10 @@ saveMyPlot <- function(p, name) {
   dev.off()
   Sys.sleep(0)
   
-  print(p)
-  dev.copy(win.metafile, paste(name,".metafile", sep=""))
-  dev.off()
-  Sys.sleep(0)
+#  print(p)
+#  dev.copy(win.metafile, paste(name,".metafile", sep=""))
+#  dev.off()
+#  Sys.sleep(0)
 }
 
 logDF <- fromJSON("logstash.json", flatten = TRUE)

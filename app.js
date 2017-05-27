@@ -136,7 +136,7 @@ logstashBody = {
 
 var outputFile = function (array, filename, callback) {
     var dateString = moment(startEpoch).format('YYYYMMDDHHmm');
-    var dir = "./output/" + dateString;
+    var dir = "./output/" + dateString + "." + process.argv[4];
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }

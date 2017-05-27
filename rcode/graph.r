@@ -3,15 +3,7 @@ library(ggplot2)
 library( ReporteRs )
 library(fBasics)
 
-args <- commandArgs(TRUE)
-print(args)
-
-if (length(args)==0) {
-  stop("At least one argument must be supplied: working dir.n", call.=FALSE)
-}
-
-setwd(args[1])
-#setwd("C:/Users/Johannes/Projects/elastic/results/output/201705262237")
+setwd("C:/Users/Johannes/Projects/elastic/results/output/201705271332")
 
 saveMyPlot <- function(p, name) {
   print(p)

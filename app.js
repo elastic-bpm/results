@@ -6,8 +6,10 @@ var client = new elasticsearch.Client({
     //  log: 'trace'
 });
 
-var startEpoch = new Date("2017-05-26 22:37").valueOf();
-var endEpoch = new Date("2017-05-26 23:20").valueOf();
+// var startEpoch = new Date("2017-05-26 22:37").valueOf();
+// var endEpoch = new Date("2017-05-26 23:20").valueOf();
+var startEpoch = new Date(process.argv[2]).valueOf();
+var endEpoch = new Date(process.argv[3]).valueOf();
 
 metricsBody = {
     "version": true,
@@ -146,7 +148,7 @@ var writeMetrics = function (callback) {
 
     // GET Metrics INFO
     client.search({
-        index: 'dockerbeat-*',
+        index: 'metricbeat-*',
         scroll: '30s', // keep the search results "scrollable" for 30 seconds
         body: metricsBody
     }, function getMoreUntilDone(error, response) {

@@ -3,16 +3,30 @@ library(ggplot2)
 library( ReporteRs )
 library(fBasics)
 
-setwd("C:/Users/Johannes/Projects/elastic/results/output/201705281412.swarm2-master")
+args = commandArgs(trailingOnly=TRUE)
+setwd(args[1])
+#setwd("C:/Users/Johannes/Projects/elastic/results/output/201705291239.swarm1-master")
 
 saveMyPlot <- function(p, name) {
+  png(paste(name,".png", sep=""), width=600, height=600)
   print(p)
-  dev.copy(png, paste(name,".png", sep=""))
   dev.off()
   Sys.sleep(0)
   
+  win.metafile(paste(name,".metafile", sep=""))
   print(p)
-  dev.copy(win.metafile, paste(name,".metafile", sep=""))
+  dev.off()
+  Sys.sleep(0)
+}
+
+saveMyBoxplot <- function(a, b, name) {
+  png(paste(name,".png", sep=""), width=600, height=600)
+  boxplot(a, b)
+  dev.off()
+  Sys.sleep(0)
+  
+  win.metafile(paste(name,".metafile", sep=""))
+  boxplot(a, b)
   dev.off()
   Sys.sleep(0)
 }
@@ -29,7 +43,7 @@ workflowStats$wfID <- substring(workflowStats$`_source.message`, 16, 51)
 workflowStats$wfType <- substring(workflowStats$`_source.message`, 53, 53)
 workflowStats$json <- substring(workflowStats$`_source.message`, 55)
 
-workflowStats$json
+#workflowStats$json
 
 type <- numeric(nrow(workflowStats))
 makespan <- numeric(nrow(workflowStats))
@@ -49,10 +63,11 @@ for (i in 1:nrow(workflowStats)){
 
 wfDF <- data.frame(type, makespan, wait_time, response_time, human_time, system_time)
 basicStats(wfDF)
-boxplot(response_time ~ type, wfDF)
-boxplot(human_time ~ type, wfDF)
-boxplot(system_time ~ type, wfDF)
-boxplot(wfDF)
+saveMyBoxplot(makespan ~ type, wfDF, "makespan")
+saveMyBoxplot(response_time ~ type, wfDF, "response")
+saveMyBoxplot(human_time ~ type, wfDF, "human")
+saveMyBoxplot(system_time ~ type, wfDF, "system")
+#boxplot(wfDF)
 
 workerStart$start <- 1
 workerDone$start <- -1

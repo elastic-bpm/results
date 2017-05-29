@@ -2,10 +2,13 @@ var elasticsearch = require('elasticsearch');
 var fs = require('fs');
 var moment = require('moment');
 
+if (process.argv.length < 5) {
+    console.log("Usage: Node app.js from-date to-date swarm[1,2,3,4]-master output-dir");
+    process.exit(1);
+}
 
 
 var client;
-
 if (process.argv[4] === "swarm1-master") {
     client = new elasticsearch.Client({host: 'elk-host.westeurope.cloudapp.azure.com:9200'});
 } else if (process.argv[4] === "swarm2-master") {
@@ -146,7 +149,7 @@ logstashBody = {
 
 var outputFile = function (array, filename, callback) {
     var dateString = moment(startEpoch).format('YYYYMMDDHHmm');
-    var dir = "./output/" + dateString + "." + process.argv[4];
+    var dir = process.argv[5] + dateString + "." + process.argv[4];
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }

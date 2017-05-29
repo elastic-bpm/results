@@ -3,7 +3,7 @@ library(ggplot2)
 library( ReporteRs )
 library(fBasics)
 
-setwd("C:/Users/Johannes/Projects/elastic/results/output/201705271332")
+setwd("C:/Users/Johannes/Projects/elastic/results/output/201705281412.swarm2-master")
 
 saveMyPlot <- function(p, name) {
   print(p)

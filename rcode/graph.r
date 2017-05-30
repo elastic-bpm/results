@@ -50,7 +50,9 @@ makespan <- numeric(nrow(workflowStats))
 wait_time <- numeric(nrow(workflowStats))
 response_time <- numeric(nrow(workflowStats))
 human_time <- numeric(nrow(workflowStats))
+human_delay_time <- numeric(nrow(workflowStats))
 system_time <- numeric(nrow(workflowStats))
+system_delay_time <- numeric(nrow(workflowStats))
 for (i in 1:nrow(workflowStats)){
   jsonStats = fromJSON(workflowStats[i,]$json)
   type[i] <- strtoi(workflowStats[i,]$wfType)
@@ -59,6 +61,8 @@ for (i in 1:nrow(workflowStats)){
   response_time[i] <- jsonStats$response_time
   human_time[i] <- jsonStats$human_time
   system_time[i] <- jsonStats$system_time
+  human_delay_time[i] <- jsonStats$human_delay_time
+  system_delay_time[i] <- jsonStats$system_delay_time
 }
 
 wfDF <- data.frame(type, makespan, wait_time, response_time, human_time, system_time)
@@ -67,6 +71,8 @@ saveMyBoxplot(makespan ~ type, wfDF, "makespan")
 saveMyBoxplot(response_time ~ type, wfDF, "response")
 saveMyBoxplot(human_time ~ type, wfDF, "human")
 saveMyBoxplot(system_time ~ type, wfDF, "system")
+saveMyBoxplot(human_delay_time ~ type, wfDF, "human_delay")
+saveMyBoxplot(system_delay_time ~ type, wfDF, "system_delay")
 #boxplot(wfDF)
 
 workerStart$start <- 1

@@ -2,10 +2,12 @@ library(jsonlite)
 library(ggplot2)
 library( ReporteRs )
 library(fBasics)
+library(reshape)
+
 
 args = commandArgs(trailingOnly=TRUE)
 setwd(args[1])
-#setwd("C:/Users/Johannes/Projects/elastic/results/output/201705291239.swarm1-master")
+#setwd("C:/Users/Johannes/Projects/elastic/results/output/run1.a1")
 
 saveMyPlot <- function(p, name) {
   png(paste(name,".png", sep=""), width=600, height=600)
@@ -38,47 +40,77 @@ logDF$time <- as.POSIXct(logDF$timeEpoch/1000, origin="1970-01-01", tz="Europe/A
 workerStart <- logDF[grep("worker:start", logDF$"_source.message", ignore.case=T),]
 workerDone <- logDF[grep("worker:done", logDF$"_source.message", ignore.case=T),]
 
-workflowStats <- logDF[grep("workflow:stats", logDF$"_source.message", ignore.case=T),]
-workflowStats$wfID <- substring(workflowStats$`_source.message`, 16, 51)
-workflowStats$wfType <- substring(workflowStats$`_source.message`, 53, 53)
-workflowStats$json <- substring(workflowStats$`_source.message`, 55)
-
-#workflowStats$json
-
-type <- numeric(nrow(workflowStats))
-makespan <- numeric(nrow(workflowStats))
-wait_time <- numeric(nrow(workflowStats))
-response_time <- numeric(nrow(workflowStats))
-human_time <- numeric(nrow(workflowStats))
-human_delay_time <- numeric(nrow(workflowStats))
-system_time <- numeric(nrow(workflowStats))
-system_delay_time <- numeric(nrow(workflowStats))
-for (i in 1:nrow(workflowStats)){
-  jsonStats = fromJSON(workflowStats[i,]$json)
-  type[i] <- strtoi(workflowStats[i,]$wfType)
-  makespan[i] <- jsonStats$makespan
-  wait_time[i] <- jsonStats$wait_time
-  response_time[i] <- jsonStats$response_time
-  human_time[i] <- jsonStats$human_time
-  system_time[i] <- jsonStats$system_time
-  human_delay_time[i] <- jsonStats$human_delay_time
-  system_delay_time[i] <- jsonStats$system_delay_time
-}
-
-wfDF <- data.frame(type, makespan, wait_time, response_time, human_time, system_time)
-basicStats(wfDF)
-saveMyBoxplot(makespan ~ type, wfDF, "makespan")
-saveMyBoxplot(response_time ~ type, wfDF, "response")
-saveMyBoxplot(human_time ~ type, wfDF, "human")
-saveMyBoxplot(system_time ~ type, wfDF, "system")
-saveMyBoxplot(human_delay_time ~ type, wfDF, "human_delay")
-saveMyBoxplot(system_delay_time ~ type, wfDF, "system_delay")
-#boxplot(wfDF)
-
 workerStart$start <- 1
 workerDone$start <- -1
 
 firstStart <- min(workerStart$timeEpoch)
+
+workflowUpdate <- logDF[grep("workflows:update", logDF$"_source.message", ignore.case=T),]
+workflowUpdate$timeEpoch <- as.numeric( workflowUpdate$`fields.@timestamp`)
+workflowUpdate$timeFromStart <- (workflowUpdate$timeEpoch - firstStart)/1000
+workflowUpdate$json <- substring(workflowUpdate$`_source.message`, 18)
+
+wf_count <- numeric(nrow(workflowUpdate))
+todo_wf_count <- numeric(nrow(workflowUpdate))
+busy_wf_count <- numeric(nrow(workflowUpdate))
+done_wf_count <- numeric(nrow(workflowUpdate))
+for (i in 1:nrow(workflowUpdate)){
+  jsonStats = fromJSON(workflowUpdate[i,]$json)
+  wf_count[i] <- jsonStats$workflow_count
+  todo_wf_count[i] <- jsonStats$todo_workflow_count  
+  busy_wf_count[i] <- jsonStats$busy_workflow_count  
+  done_wf_count[i] <- jsonStats$done_workflow_count  
+}
+p <- ggplot(workflowUpdate, aes(workflowUpdate$timeFromStart)) + 
+  geom_line(aes(y = wf_count, colour = "Total workflows")) + 
+  geom_line(aes(y = todo_wf_count, colour = "Todo workflows")) + 
+  geom_line(aes(y = busy_wf_count, colour = "Busy workflows")) + 
+  geom_line(aes(y = done_wf_count, colour = "Done workflows"))
+saveMyPlot(p, "workflows")
+
+taskUpdate <- logDF[grep("tasks:update", logDF$"_source.message", ignore.case=T),]
+taskUpdate$timeEpoch <- as.numeric( taskUpdate$`fields.@timestamp`)
+taskUpdate$timeFromStart <- (taskUpdate$timeEpoch - firstStart)/1000
+taskUpdate$json <- substring(taskUpdate$`_source.message`, 14)
+
+task_count <- numeric(nrow(taskUpdate))
+todo_task_count <- numeric(nrow(taskUpdate))
+busy_task_count <- numeric(nrow(taskUpdate))
+done_task_count <- numeric(nrow(taskUpdate))
+for (i in 1:nrow(taskUpdate)){
+  jsonStats = fromJSON(taskUpdate[i,]$json)
+  task_count[i] <- jsonStats$task_count
+  todo_task_count[i] <- jsonStats$todo_task_count  
+  busy_task_count[i] <- jsonStats$busy_task_count  
+  done_task_count[i] <- jsonStats$done_task_count  
+}
+p <- ggplot(taskUpdate, aes(taskUpdate$timeFromStart)) + 
+  geom_line(aes(y = task_count, colour = "Total tasks")) + 
+  geom_line(aes(y = todo_task_count, colour = "Todo tasks")) + 
+  geom_line(aes(y = busy_task_count, colour = "Busy tasks")) + 
+  geom_line(aes(y = done_task_count, colour = "Done tasks"))
+saveMyPlot(p, "tasks")
+
+
+schedulerInfo <- logDF[grep("scheduler:info", logDF$"_source.message", ignore.case=T),]
+schedulerInfo$timeEpoch <- as.numeric( schedulerInfo$`fields.@timestamp`)
+schedulerInfo$timeFromStart <- (schedulerInfo$timeEpoch - firstStart)/1000
+schedulerInfo$json <- substring(schedulerInfo$`_source.message`, 16)
+active_machines <- numeric(nrow(schedulerInfo))
+active_nodes <- numeric(nrow(schedulerInfo))
+target_nodes <- numeric(nrow(schedulerInfo))
+for (i in 1:nrow(schedulerInfo)) {
+  jsonStats = fromJSON(schedulerInfo[i,]$json)
+  active_machines[i] <- jsonStats$active_machines
+  active_nodes[i] <- jsonStats$active_nodes
+  target_nodes[i] <- jsonStats$target_nodes
+}
+p <- ggplot(schedulerInfo, aes(schedulerInfo$timeFromStart)) + 
+  geom_line(aes(y = active_machines, colour = "Active machines")) + 
+  geom_line(aes(y = active_nodes, colour = "Active nodes")) + 
+  geom_line(aes(y = target_nodes, colour = "Target nodes"))
+saveMyPlot(p, "resources")
+
 
 metricsDF <- fromJSON("metrics.json", flatten = TRUE)
 metricsDF <- metricsDF[grep("^node", metricsDF$`_source.beat.hostname`),]
@@ -148,5 +180,49 @@ plotNet <- function(df) {
   return (p)
 }
 saveMyPlot(plotNet(netDF), "net")
+
+
+workflowStats <- logDF[grep("workflow:stats", logDF$"_source.message", ignore.case=T),]
+workflowStats$timeEpoch <- as.numeric( workflowStats$`fields.@timestamp`)
+workflowStats$timeFromStart <- (workflowStats$timeEpoch - firstStart)/1000
+workflowStats$wfID <- substring(workflowStats$`_source.message`, 16, 51)
+workflowStats$wfType <- substring(workflowStats$`_source.message`, 53, 53)
+workflowStats$json <- substring(workflowStats$`_source.message`, 55)
+
+type <- numeric(nrow(workflowStats))
+makespan <- numeric(nrow(workflowStats))
+wait_time <- numeric(nrow(workflowStats))
+response_time <- numeric(nrow(workflowStats))
+human_time <- numeric(nrow(workflowStats))
+human_delay_time <- numeric(nrow(workflowStats))
+system_time <- numeric(nrow(workflowStats))
+system_delay_time <- numeric(nrow(workflowStats))
+time <- numeric(nrow(workflowStats))
+for (i in 1:nrow(workflowStats)){
+  jsonStats = fromJSON(workflowStats[i,]$json)
+  type[i] <- strtoi(workflowStats[i,]$wfType)
+  makespan[i] <- jsonStats$makespan
+  wait_time[i] <- jsonStats$wait_time
+  response_time[i] <- jsonStats$response_time
+  human_time[i] <- jsonStats$human_time
+  system_time[i] <- jsonStats$system_time
+  human_delay_time[i] <- jsonStats$human_delay_time
+  system_delay_time[i] <- jsonStats$system_delay_time
+  time[i] <- workflowStats[i,]$timeFromStart
+}
+
+wfDF <- data.frame(time, type, makespan, wait_time, response_time, human_time, system_time)
+basicStats(wfDF)
+saveMyBoxplot(makespan ~ type, wfDF, "makespan")
+saveMyBoxplot(response_time ~ type, wfDF, "response")
+saveMyBoxplot(human_time ~ type, wfDF, "human")
+saveMyBoxplot(system_time ~ type, wfDF, "system")
+saveMyBoxplot(human_delay_time ~ type, wfDF, "human_delay")
+saveMyBoxplot(system_delay_time ~ type, wfDF, "system_delay")
+
+#nieuwe stukje, opslaan voor latere barcharts. 
+wfDF <- data.frame(makespan, wait_time, human_delay_time, human_time, system_delay_time, system_time)
+save(wfDF, file = "wfDF.Rdata")
+
 
 

@@ -7,7 +7,7 @@ library(reshape)
 
 args = commandArgs(trailingOnly=TRUE)
 setwd(args[1])
-#setwd("C:/Users/Johannes/Projects/elastic/results/output/5-3")
+#setwd("C:/Users/Johannes/Projects/elastic/results/output/D2/8")
 
 saveMyPlot <- function(p, name) {
   png(paste(name,".png", sep=""), width=600, height=600)
@@ -23,13 +23,13 @@ saveMyPlot <- function(p, name) {
 
 saveMyBoxplot <- function(a, b, name) {
   png(paste(name,".png", sep=""), width=600, height=600)
-  p <- boxplot(a, b) + expand_limits(y=0)
+  p <- boxplot(a, b)
   print(p)
   dev.off()
   Sys.sleep(0)
   
   win.metafile(paste(name,".metafile", sep=""))
-  p <- boxplot(a, b) + expand_limits(y=0)
+  p <- boxplot(a, b)
   print(p)
   dev.off()
   Sys.sleep(0)

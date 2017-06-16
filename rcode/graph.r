@@ -7,7 +7,7 @@ library(reshape)
 
 args = commandArgs(trailingOnly=TRUE)
 setwd(args[1])
-#setwd("C:/Users/Johannes/Projects/elastic/results/output/run1.a1")
+#setwd("C:/Users/Johannes/Projects/elastic/results/output/5-3")
 
 saveMyPlot <- function(p, name) {
   png(paste(name,".png", sep=""), width=600, height=600)
@@ -23,12 +23,14 @@ saveMyPlot <- function(p, name) {
 
 saveMyBoxplot <- function(a, b, name) {
   png(paste(name,".png", sep=""), width=600, height=600)
-  boxplot(a, b)
+  p <- boxplot(a, b) + expand_limits(y=0)
+  print(p)
   dev.off()
   Sys.sleep(0)
   
   win.metafile(paste(name,".metafile", sep=""))
-  boxplot(a, b)
+  p <- boxplot(a, b) + expand_limits(y=0)
+  print(p)
   dev.off()
   Sys.sleep(0)
 }
@@ -65,7 +67,9 @@ p <- ggplot(workflowUpdate, aes(workflowUpdate$timeFromStart)) +
   geom_line(aes(y = wf_count, colour = "Total workflows")) + 
   geom_line(aes(y = todo_wf_count, colour = "Todo workflows")) + 
   geom_line(aes(y = busy_wf_count, colour = "Busy workflows")) + 
-  geom_line(aes(y = done_wf_count, colour = "Done workflows"))
+  geom_line(aes(y = done_wf_count, colour = "Done workflows")) +
+  scale_x_continuous(limits=c(0, 2540), breaks=(breaks=seq(0,2400,200)))
+
 saveMyPlot(p, "workflows")
 
 taskUpdate <- logDF[grep("tasks:update", logDF$"_source.message", ignore.case=T),]
@@ -88,7 +92,9 @@ p <- ggplot(taskUpdate, aes(taskUpdate$timeFromStart)) +
   geom_line(aes(y = task_count, colour = "Total tasks")) + 
   geom_line(aes(y = todo_task_count, colour = "Todo tasks")) + 
   geom_line(aes(y = busy_task_count, colour = "Busy tasks")) + 
-  geom_line(aes(y = done_task_count, colour = "Done tasks"))
+  geom_line(aes(y = done_task_count, colour = "Done tasks")) +
+  scale_x_continuous(limits=c(0, 2540), breaks=(breaks=seq(0,2400,200)))
+
 saveMyPlot(p, "tasks")
 
 
@@ -106,11 +112,11 @@ for (i in 1:nrow(schedulerInfo)) {
   target_nodes[i] <- jsonStats$target_nodes
 }
 p <- ggplot(schedulerInfo, aes(schedulerInfo$timeFromStart)) + 
-  geom_line(aes(y = active_machines, colour = "Active machines")) + 
-  geom_line(aes(y = active_nodes, colour = "Active nodes")) + 
-  geom_line(aes(y = target_nodes, colour = "Target nodes"))
+  xlab("Time (in seconds) since first Workflow started") + ylab("Active nodes") +
+  geom_area(aes(y = active_nodes)) +
+  scale_y_continuous(limits=c(0, 15), breaks=(breaks=seq(0,15,1))) +
+  scale_x_continuous(limits=c(0, 2540), breaks=(breaks=seq(0,2400,200)))
 saveMyPlot(p, "resources")
-
 
 metricsDF <- fromJSON("metrics.json", flatten = TRUE)
 metricsDF <- metricsDF[grep("^node", metricsDF$`_source.beat.hostname`),]
@@ -126,6 +132,7 @@ plotLoad <- function(df) {
   p <- ggplot(df, aes(df$timeFromStart, df$`_source.system.load.5`))
   p <- p + geom_line(aes(colour = factor(df$`_source.beat.hostname`)))
   p <- p + xlab("Time (in seconds) since first Workflow started") + ylab("System load over 5 minutes")     
+  p <- p + scale_x_continuous(limits=c(0, 2540), breaks=(breaks=seq(0,2400,200)))
   p <- p + scale_colour_discrete(name="")
   p <- p + theme(legend.position="top")
   return (p)
@@ -140,6 +147,7 @@ plotDisk <- function(df) {
   p <- ggplot(df, aes(df$timeFromStart, df$`_source.system.diskio.write.bytes`))
   p <- p + geom_line(aes(colour = factor(df$`_source.beat.hostname`)))
   p <- p + xlab("Time (in seconds) since first Workflow started") + ylab("Bytes written to disk since start")     
+  p <- p + scale_x_continuous(limits=c(0, 2540), breaks=(breaks=seq(0,2400,200)))
   p <- p + scale_colour_discrete(name="")
   p <- p + theme(legend.position="top")
   return (p)
@@ -151,6 +159,7 @@ plotMemory <- function(df) {
   p <- ggplot(df, aes(df$timeFromStart, df$`_source.system.memory.actual.used.pct`))
   p <- p + geom_line(aes(colour = factor(df$`_source.beat.hostname`)))
   p <- p + xlab("Time (in seconds) since first Workflow started") + ylab("Memory usage")     
+  p <- p + scale_x_continuous(limits=c(0, 2540), breaks=(breaks=seq(0,2400,200)))
   p <- p + scale_colour_discrete(name="")
   p <- p + theme(legend.position="top")
   return (p)
@@ -162,6 +171,7 @@ plotCPU <- function(df) {
   p <- ggplot(df, aes(df$timeFromStart, df$`_source.system.cpu.user.pct`))
   p <- p + geom_line(aes(colour = factor(df$`_source.beat.hostname`)))
   p <- p + xlab("Time (in seconds) since first Workflow started") + ylab("CPU usage")     
+  p <- p + scale_x_continuous(limits=c(0, 2540), breaks=(breaks=seq(0,2400,200)))
   p <- p + scale_colour_discrete(name="")
   p <- p + theme(legend.position="top")
   return (p)
@@ -175,6 +185,7 @@ plotNet <- function(df) {
   p <- ggplot(df, aes(df$timeFromStart, df$MBs))
   p <- p + geom_line(aes(colour = factor(df$`_source.beat.hostname`)))
   p <- p + xlab("Time (in seconds) since first Workflow started") + ylab("GBs received over eth0 since start")
+  p <- p + scale_x_continuous(limits=c(0, 2540), breaks=(breaks=seq(0,2400,200)))
   p <- p + scale_colour_discrete(name="")
   p <- p + theme(legend.position="top")
   return (p)

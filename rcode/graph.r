@@ -7,7 +7,7 @@ library(reshape)
 
 args = commandArgs(trailingOnly=TRUE)
 setwd(args[1])
-#setwd("C:/Users/Johannes/Projects/elastic/results/output/D2/8")
+#setwd("C:/Users/Johannes/Projects/elastic/results/output/A/1")
 
 saveMyPlot <- function(p, name) {
   png(paste(name,".png", sep=""), width=600, height=600)
@@ -15,7 +15,7 @@ saveMyPlot <- function(p, name) {
   dev.off()
   Sys.sleep(0)
   
-  win.metafile(paste(name,".metafile", sep=""))
+  win.metafile(paste(name,".emf", sep=""))
   print(p)
   dev.off()
   Sys.sleep(0)
@@ -28,7 +28,7 @@ saveMyBoxplot <- function(a, b, name) {
   dev.off()
   Sys.sleep(0)
   
-  win.metafile(paste(name,".metafile", sep=""))
+  win.metafile(paste(name,".emf", sep=""))
   p <- boxplot(a, b)
   print(p)
   dev.off()
@@ -64,6 +64,7 @@ for (i in 1:nrow(workflowUpdate)){
   done_wf_count[i] <- jsonStats$done_workflow_count  
 }
 p <- ggplot(workflowUpdate, aes(workflowUpdate$timeFromStart)) + 
+  xlab("Time (in seconds) since first Workflow started") + ylab("Amount of workflows") +
   geom_line(aes(y = wf_count, colour = "Total workflows")) + 
   geom_line(aes(y = todo_wf_count, colour = "Todo workflows")) + 
   geom_line(aes(y = busy_wf_count, colour = "Busy workflows")) + 
@@ -89,6 +90,7 @@ for (i in 1:nrow(taskUpdate)){
   done_task_count[i] <- jsonStats$done_task_count  
 }
 p <- ggplot(taskUpdate, aes(taskUpdate$timeFromStart)) + 
+  xlab("Time (in seconds) since first Workflow started") + ylab("Amount of tasks") +
   geom_line(aes(y = task_count, colour = "Total tasks")) + 
   geom_line(aes(y = todo_task_count, colour = "Todo tasks")) + 
   geom_line(aes(y = busy_task_count, colour = "Busy tasks")) + 

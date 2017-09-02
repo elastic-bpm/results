@@ -96,12 +96,15 @@ shapes <- c("wl1" = 1, "wl2" = 2)
 alpha <- c("wl1" = 0.5, "wl2" = 0.5)
 # 2 eerdere grafieken in 1. 
 ggplot(merged, aes(timecat)) +
+  theme_bw() +
+  expand_limits(x = 0, y = 0) +
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
   geom_point(aes(y= loadmean.x, shape="wl1")) + 
   geom_line(aes(y= loadmean.x, colour = "wl1")) +
-  geom_errorbar(aes(ymin = (loadmean.x - loadsd2.x), ymax = (loadmean.x + loadsd2.x), colour="wl1", alpha="wl1")) +
+  geom_errorbar(width = 0, aes(ymin = (loadmean.x - loadsd2.x), ymax = (loadmean.x + loadsd2.x), colour="wl1", alpha="wl1")) +
   geom_point(aes(y= loadmean.y, shape="wl2")) + 
   geom_line(aes(y= loadmean.y, colour = "wl2")) +
-  geom_errorbar(aes(ymin = (loadmean.y - loadsd2.y), ymax = (loadmean.y + loadsd2.y), colour="wl2", alpha="wl2")) + 
+  geom_errorbar(width = 0, aes(ymin = (loadmean.y - loadsd2.y), ymax = (loadmean.y + loadsd2.y), colour="wl2", alpha="wl2")) + 
   xlab("minutes from start") + ylab("mean load") +
   scale_shape_manual(name = 'Workload', values = shapes) +
   scale_colour_manual(name = 'Workload', values = cols) +
